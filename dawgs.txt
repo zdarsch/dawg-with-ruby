@@ -1,0 +1,27 @@
+            Directed Acyclic Word Graphs 
+
+The script "fsa_build.rb" builds the minimal FSA (finite state automatom with final transitions) representing a lexicographically sorted list of strings (here, called "dict.txt"). To ensure minimality, empty lines and duplicates  are not allowed.
+
+Final transitions are used instead of final states because they lead to a smaller minimal automatom. The  FSA produced may be viewed as a directed acyclic  graph. Accordingly, its states and  transitions are simply named  "nodes" and "edges". 
+
+ The script "fsa_save.rb" builds and  serializes  the minimal FSA   recognizing "dict.txt".  As hashes in Ruby187 don't preserve their insertion order, the nodes receive a new attribute and are pushed into  an array to preserve their registration order.
+
+Reversing this array, we get  a topological ordering. Identifying each node  by its order index, we obtain a representation of the  FSA as a sequence of edges of the form [label, target  index, flags].
+
+Depending on the number of nodes, labels and flags,  every edge may be represented  by a small number of bytes. In our use cases, 4 bytes will do. 
+However, in order to reduce the size of the serialization (here, called "dict.fsa"),  another scheme was preferred.
+ 
+ The file "dict.fsa" is a binary file, divided in sections : N0, N1, N2, ... (nodes) and subsections (edges) of  4 bytes (A, B, C, D) or only 2 bytes (A, B).
+
+The first byte A  is  the  label. The three least significant bits of B are flags. If B[0]  is set,  A is the last character of a word recognized by the automatom. If B[1] is set,   the edge is the last edge in its node. If  B[2] is set, the edge target is the next node and the edge is only  two  bytes long.
+
+If  B[2]==0, the index X of the  target node is 21 bits long and can be simply described :  first come the bits of D,  then those of  C and  lastly the five most significant bits of B.
+ 
+ The scripts were tested on a cheap old computer (Windows XP, 1.30 ghz, ram 504 mb) running  Ruby187 with a file "dict.txt" (26 282 kb),  holding a list of 2 039 133 russian accented words, which  took eight minutes to build. The file "dict.fsa"  (710 kb) is used in the project "russian-stress-with-ruby" on github.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
