@@ -4,7 +4,7 @@ A finite state automatom (FSA), recognizing a set of strings,  can be viewed as 
 
 How to use:
 1) Prepare a file with  a lexicographically sorted list of  words. One word  per line, no empty lines, no  repetitions. 
-2) Rename the file "dict.txt"
+2) Rename the file to "dict.txt"
 3) Run "fsa_build.rb" or "fsa_save.rb"
 
 The script "fsa_build.rb" builds the (minimal) FSA and prints the number of  nodes and edges.
