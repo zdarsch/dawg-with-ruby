@@ -1,7 +1,7 @@
             Directed Acyclic Word Graphs
            (with Ruby187 on Windows Xp)
 
-A finite state automatom (FSA), recognizing a set of strings,  can be viewed as a directed acyclic graph. Thus, such FSAs are also known as directed acyclic word graphs (DAWGs). The aim of  the project is to build them with Ruby, serialize them and use them in other projects. The project is based on the work of Jan Daciuk (http://www.jandaciuk.pl/fsa.html).
+A finite state automaton (FSA), recognizing a set of strings,  can be viewed as a directed acyclic graph. Thus, such FSAs are also known as directed acyclic word graphs (DAWGs). The aim of  the project is to build them with Ruby, serialize them and use them in other projects. The project is based on the work of Jan Daciuk (http://www.jandaciuk.pl/fsa.html).
 
 How to use:
 1) Prepare a file with  a lexicographically sorted list of  words. One word  per line, no empty lines, no  repetitions. 
