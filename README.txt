@@ -13,3 +13,9 @@ The script "fsa_build.rb" builds the (minimal) FSA and prints the number of  nod
 The script "fsa_save.rb" builds and saves the FSA to disk,  in the file "dict.fsa".
 
 The script "fsa_decode.rb"  takes  "dict.fsa" as input and rapidly loads  the FSA. Then a depth-first traversal is done and the words recognized by the FSA are printed to disk, in the file "_dict.txt".
+
+The script "perfect_hashing.rb" uses "dict.fsa" to build a numbered automaton. The class "Node" gets a  new instance variable: "num". For each node, the value of  "num" is the cardinal of its right language. New methods  wrapped in a module are added to the automaton.  A post order traversal "dfs" sets the value of "num".  The methods "num2word" and "word2um" implement a minimal perfect hashing.
+
+Further reading:
+1) Kowaltowski, Lucchesi; "Applications of Finite Automata Representing Large Vocabularies"; Relatorio Tecnico DCC-01/92 (1992)
+2) Kowaltowski, Lucchesi, Stolfi; "Finite Automata and Efficient Lexicon Implementation"; Relatorio Tecnico IC-98-2 (1998)
