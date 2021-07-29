@@ -1,4 +1,4 @@
-# ruby187 on Windows Xp; automata have final edges
+# ruby187 on Windows Xp; automata have final transitions.
 
 f=File.open("dict.fsa", "rb")
 # To implement perfect hashing
