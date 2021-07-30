@@ -3,7 +3,7 @@
 f=File.open("dict.fsa", "rb")
 # To implement perfect hashing
 # we use dict.fsa to build a numbered automaton.
-# The new variable(num) holds the size (number of words) 
+# The new variable "num" holds the size (number of words) 
 # of the right language of the node.
 
 class Node
