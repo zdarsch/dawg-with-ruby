@@ -1,9 +1,9 @@
-# ruby187 on Windows Xp; automata have final transitions.
+# ruby187 on Windows Xp; automata have final transitions (not states).
 
 f=File.open("dict.fsa", "rb")
 # To implement perfect hashing
 # we use dict.fsa to build a numbered automaton.
-# The new variable(num) holds the cardinal 
+# The new variable(num) holds the size (number of words) 
 # of the right language of the node.
 
 class Node
