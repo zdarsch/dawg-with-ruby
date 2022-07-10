@@ -1,4 +1,4 @@
-# ruby187 on Windows Xp
+# Ruby 274
 
 f=File.open("dict.fsa", "rb")
 g=File.open("_dict.txt", "w")
@@ -9,61 +9,34 @@ def initialize
 end
 end#Node
 
-class String
-# (2<= string.length <=4)	
-def label
-return self[0]
-end
 
-def flags
-return self[1]&7
-end
-
-def node_final?
-return self[1]&2==2
-end
-
-def target_is_next?
-return self[1]&4==4
-end
-	
-def target
-return  (self[1]>>3) + (self[2]<<5) + (self[3]<<13)
-end
-
-end#String
-
-h = Hash.new { |hash, key| hash[key] = Node.new }
+# Load  the automaton
+h =Hash.new { |fsa, n| fsa[n] = Node.new }
 x, edge = 0, []
-while s=f.read(4) do# s.length <= 4
-if s.target_is_next? then 
-f.pos = f.pos - s.length + 2 # s.length <= 4 
-edge=[ s.label, x+1, s.flags ]
-else
-edge=[ s.label, s.target, s.flags ] 
-end
+while s=f.read(4) do
+s=s.each_byte.to_a
+# edge=[label, target, flags]
+edge=[ s[0], (s[1]>>2) + (s[2]<<6) + (s[3]<<14), s[1]&3 ] 
 h[x].edges << edge
-x+=1 if s.node_final?
+(x+=1; h[x]) if s[1]&2==2 #last edge of node
 end#while
 
-$candidate=[]
-$replacements=[]
+## Top level instance variables:
+@candidate=[]
+@replacements=[]
 
 def dfs(n, h, depth)
 i=depth	
 node=h[n]
 node.edges.each do |edge|
-        $candidate[i]=edge[0].chr
+        @candidate[i]=edge[0].chr
         if edge[2]&1==1 then
-	$candidate.slice!(i+1 .. -1)
-        $replacements<<$candidate.to_s 
+	@candidate.slice!(i+1 .. -1)
+        @replacements<<@candidate.join
 	end#if
          dfs(edge[1], h, i+1)
 end#each
 end#dfs
 
 dfs(0, h,0)
-
-  $candidate#.clear
-  
-  g.puts $replacements 
+g.puts @replacements 

@@ -1,8 +1,18 @@
-# ruby187 on Windows Xp
+# Ruby 274
+# Builds the minimal fsa with final transitions representing a lexicographically sorted list of strings. Empty lines or repetitions are not allowed.
 
-# Builds the minimal fsa with final transitions representing the lexicographically sorted list of strings "dict.txt". Empty lines and duplicates are not allowed. 
-
+# The encoding of dict.txt was CP1251, when testing.
 words=IO.readlines("dict.txt")
+
+class String
+def cplen(str)
+count=0
+(0 ... str.length).each{ |i|
+self[i]==str[i] ? count +=1 :  break
+}
+return count
+end#def
+end#class
 
 class Node
 	attr_accessor :edges
@@ -16,51 +26,58 @@ end#Node
 class Fsa
 	
 def initialize
-	@previous_wd=""
+	@prev_word=""
 	@root= Node.new
-	@stack=[@root]
-	@register={} # holds the minimal fsa
+	@prev_path=[@root] #array of nodes
+	@register={} 
 end
 
-def register_or_replace(limit=0)
-1.upto(@stack.length) do |x|
-if limit == (@stack.length - x)    then
-break
-else		
-child=@stack[-x]
-parent=@stack[-(x+1)]
-if @register.has_key?(child.edges) then	
-parent.edges[-1][1]=@register[child.edges]
+
+
+def minimize_downto(limit)
+a=@prev_path	
+(a.length - 1 ).downto(limit)do |x|
+if @register.has_key?(a[x].edges) then
+#replace	
+a[x-1].edges[-1][1]=@register[a[x].edges]
 else
-@register[child.edges]=child
-end #if @register
-end#if limit
-end#upto
-@stack=@stack.slice(0 .. limit)
-end
+#register
+@register[a[x].edges]=a[x]
+end #if
+end#downto
+end#def
+
+# @prev_path is the path recognizing prev_word in the fsa under construction. Thus, in @prev_path the last edge of each node points to the next node, the last edge of the path is marked as final and the labels are the characters (or bytes) of prev_word.
+
+# When next_word has been added and cpl, the length of the longest common prefix, has been determined, the subarray @prev_path[0 .. cpl] is the path of the longest common prefix.
+
+# We then  know from the lexicographic ordering of the words that the nodes of @prev_path[cpl+1 .. -1] will never get any other child. So, these nodes are now ready to be registered (or replaced as the case may be) according to the following principle: register a node once all its children have been registered. 
+
+# The next step is to update @prev_word and @prev_path to prepare  the insertion of yet another word.The path of the longest common prefix is unchanged except for its last node ( @prev_path[cpl])which gets a new edge labeled next_word[cpl]. 
+
+
 
 def insert(word)
-# get the length ("cpl") of the longest common prefix.
-cpl=0
-(0 ... word.length).each{ |i|
-word[i]==@previous_wd[i] ? cpl +=1 :  break
-}
+cpl=@prev_word.cplen(word)
+minimize_downto(cpl+1) 
+# update @prev_word
+@prev_word=word
+# update @prev_path
+@prev_path.slice!( cpl+1 .. -1)
+node=@prev_path[cpl]
 suffix=word[cpl .. -1] 
-self.register_or_replace(cpl)
-node=@stack[-1]
-suffix.each_byte{|byte| 
+suffix.each_byte do |byte| 
 next_node = Node.new
 node.edges<<[byte, next_node]
-@stack<<next_node
+@prev_path<<next_node
 node=next_node
-}
-@stack[-2].edges[-1] << true # mark transition as final
-@previous_wd=word
+end
+@prev_path[-2].edges[-1] << true # mark transition as final
 end
 
 def insert_last_word
-self.register_or_replace
-@register[@root.edges]=@root
+# 0 instead of 1, to register @root at the same time:  
+minimize_downto(0)
 end
 
 def node_count
@@ -78,13 +95,14 @@ end
 end#Fsa
 
 fsa=Fsa.new
-words.each{ |word| fsa.insert(word.strip) }
+words.each do|word|
+	word.force_encoding("CP1251")
+	fsa.insert(word.chomp)
+	end
 fsa.insert_last_word
 
-puts "nodes: #{fsa.node_count.to_s}"
-puts "edges: #{fsa.edge_count.to_s}"
-
-
+puts "nodes: #{fsa.node_count}"
+puts "edges: #{fsa.edge_count}"
 
 
 

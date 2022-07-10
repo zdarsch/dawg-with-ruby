@@ -1,12 +1,20 @@
-# ruby187 on Windows Xp
+# Ruby 274
+# Builds and serializes the minimal fsa with final transitions representing a lexicographically sorted list of strings. Empty lines or repetitions are not allowed.
 
-# Builds and serializes the minimal fsa with final transitions representing the lexicographically sorted list of strings "dict.txt". Empty lines and duplicates are not allowed. 
 
-# The serialization is adapted to our use cases: 4 bytes (at most) are used to represent an edge.
-
-words=IO.readlines("dict.txt") 
+# The encoding of dict.txt was CP1251, when testing.
+words=IO.readlines("dict.txt")
 f= File.open("dict.fsa", 'wb')
 
+class String
+def cplen(str)
+count=0
+(0 ... str.length).each{ |i|
+self[i]==str[i] ? count +=1 :  break
+}
+return count
+end#def
+end#class
 
 class Node
 	attr_accessor :edges, :idx
@@ -19,54 +27,49 @@ end# Node
 class Fsa
 	
 def initialize
-	@previous_wd=""
+	@prev_word=""
 	@root= Node.new
-	@stack=[@root]
+	@prev_path=[@root] #array of nodes
 	@register={}
-	@a=[] # holds the nodes in their registration order
 end
 
-def register_or_replace(limit=0)
-1.upto(@stack.length) do |x|
-if limit == (@stack.length - x)    then
-break
-else		
-child=@stack[-x]
-parent=@stack[-(x+1)]
-if @register.has_key?(child.edges) then	
-parent.edges[-1][1]=@register[child.edges]
+
+def minimize_downto(limit)
+a=@prev_path	
+(a.length - 1 ).downto(limit)do |x|
+if @register.has_key?(a[x].edges) then
+#replace	
+a[x-1].edges[-1][1]=@register[a[x].edges]
 else
-@a<< child# 
-@register[child.edges]=child
-end #if @register
-end#if limit
-end#upto
-@stack=@stack.slice(0 .. limit)
-end #register_or_replace
+#register
+@register[a[x].edges]=a[x]
+end #if
+end#downto
+end#def
+
 
 def insert(word)
-# get the length("cpl") of the longest common prefix.
-cpl=0
-(0 ... word.length).each{ |i|
-word[i]==@previous_wd[i] ? cpl +=1 :  break
-}
-suffix=word[cpl .. -1]
-self.register_or_replace(cpl)
-node=@stack[-1]
-suffix.each_byte{|byte| 
+cpl=@prev_word.cplen(word)
+minimize_downto(cpl+1) 
+# update @prev_word
+@prev_word=word
+# update @prev_path
+@prev_path.slice!( cpl+1 .. -1)
+node=@prev_path[cpl]
+# complete @prev_path for new path 
+suffix=word[cpl .. -1] 
+suffix.each_byte do |byte| 
 next_node = Node.new
 node.edges<<[byte, next_node]
-@stack<<next_node
+@prev_path<<next_node
 node=next_node
-}
-@stack[-2].edges[-1] << true # mark transition as final
-@previous_wd=word
-end#insert
+end
+@prev_path[-2].edges[-1] << true # mark transition as final
+end
 
 def insert_last_word
-self.register_or_replace
-@register[@root.edges]=@root
-@a<< @root #
+# 0 instead of 1, to register @root at the same time: 
+minimize_downto(0)
 end
 
 def node_count
@@ -81,40 +84,41 @@ count += node.edges.length
 return count
 end
 
-def to_a
-@a.reverse
+def to_a2
+# Ruby274 preserves the insertion order 
+@register.values.reverse
 end
 
 end#Fsa
 
 fsa=Fsa.new
-words.each{|word| fsa.insert(word.strip)}
+words.each do|word|
+	word.force_encoding("CP1251")
+	fsa.insert(word.chomp)
+	end
 fsa.insert_last_word
 
-puts "nodes: #{fsa.node_count.to_s}"
-puts "edges: #{fsa.edge_count.to_s}"
+puts "nodes: #{fsa.node_count}"
+puts "edges: #{fsa.edge_count}"
 
-fsa= fsa.to_a # now fsa is topologically ordered
-fsa.each_with_index do |node, x|  node.idx=x  end
+ar= fsa.to_a2  # nodes in topological order
+
+
+ar.each_with_index do |node, x|  node.idx=x  end
 
 a=[] 
-fsa.each_with_index do |node, x|
+ar.each_with_index do |node, x|
 node.edges.each do |edge|
-flags= edge[2] ? 1 : 0 # set word_final flag
-flags +=2 if edge==node.edges[-1]# set node_final_flag
-flags +=4 if edge[1].idx==x + 1 # set target_is_next flag
+flags= edge[2] ? 1 : 0 # set word final flag
+flags +=2 if edge==node.edges[-1]# set node final flag
 a<<[edge[0], edge[1].idx, flags ]
 end
 end
 
 a.each do |label, fix, flags|
-fix<<=3     # make room for flags
-fix|=flags   # insert flags
-if flags&4 ==4 then # flag target_is_next is set
-f.print label.chr, flags.chr 
-else
-f.print	label.chr, (fix&0xff).chr, ((fix>>8)&0xff).chr,  (fix>>16).chr  
-end#if
+fix<<=2     #  room for flags
+fix|=flags   #  insert flags
+f.print	label.chr, (fix&0xff).chr, ((fix>>8)&0xff).chr,  (fix>>16).chr
 end#each
 
 

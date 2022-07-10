@@ -1,9 +1,10 @@
-# ruby187 on Windows Xp; automata have final transitions (not states).
+# Ruby 274
 
 f=File.open("dict.fsa", "rb")
+
 # To implement perfect hashing
 # we use dict.fsa to build a numbered automaton.
-# The new variable "num" holds the size (number of words) 
+# The new variable(num) holds the cardinal 
 # of the right language of the node.
 
 class Node
@@ -13,18 +14,15 @@ def initialize
 end
 end#Node
 
-# Create the automaton
+# Load  the automaton
 h =Hash.new { |fsa, n| fsa[n] = Node.new }
 x, edge = 0, []
-while s=f.read(4) do #s.length <= 4
-if s[1]&4==4 then #target is next
-f.pos = f.pos - s.length + 2 #s.length <= 4 
-edge=[ s[0], x+1, s[1]&7 ]
-else
-edge=[ s[0], (s[1]>>3) + (s[2]<<5) + (s[3]<<13), s[1]&7 ] 
-end
+while s=f.read(4) do
+s=s.each_byte.to_a
+# edge=[label, target, flags]
+edge=[ s[0], (s[1]>>2) + (s[2]<<6) + (s[3]<<14), s[1]&3 ] 
 h[x].edges << edge
-x+=1 if s[1]&2==2 #last edge in node
+(x+=1; h[x]) if s[1]&2==2 #last edge of node
 end#while
 
 # The  methods defined in the following module
@@ -59,7 +57,7 @@ def num2word(m)
 	count=m
 	h, n =self, 0
 	output_word=""
-	
+	return nil if  m > h[0].num # m is too big
 	while node=h[n] do
 	node.edges.each do |e|
 		if count > h[e[1]].num + (e[2]&1) then
@@ -108,20 +106,16 @@ end#def
 
 end#module
 
-# Adding methods to the automaton
+# Add methods to the automaton
 h.extend(A)
 
-# Numbering the automaton
+# Number the automaton
 h.dfs(0) 
 
-# Testing
+
 g=File.open("results", "w")
-h.keys.sort.each do |n| g.puts [n, h[n].num].join("=>") end
-#0=>2039133, . . .
-# The following (commented out) line :
-# (1 .. 2039133).each do |x| g.puts h.num2word(x) end
-# is a way of getting the whole list of words
-# recognised by the automaton.
+# another way of decoding dict.fsa
+(1 .. h[0].num).each do |x| g.puts h.num2word(x) end
 
 
 
