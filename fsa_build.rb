@@ -1,7 +1,8 @@
-# Ruby 274
-# Builds the minimal fsa with final transitions representing a lexicographically sorted list of strings. Empty lines or repetitions are not allowed.
+#encoding: Windows-1251
+Encoding.default_external="Windows-1251"
 
-# The encoding of dict.txt was CP1251, when testing.
+# Builds the minimal fsa with final transitions representing a lexicographically sorted list of strings. Empty lines or repetitions are not allowed. Tested with  Ruby 274 on Windows 10.
+
 words=IO.readlines("dict.txt")
 
 class String
@@ -95,10 +96,7 @@ end
 end#Fsa
 
 fsa=Fsa.new
-words.each do|word|
-	word.force_encoding("CP1251")
-	fsa.insert(word.chomp)
-	end
+words.each{|word| fsa.insert(word.chomp) }
 fsa.insert_last_word
 
 puts "nodes: #{fsa.node_count}"
